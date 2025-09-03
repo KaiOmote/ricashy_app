@@ -30,7 +30,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _amountFocusNode.addListener(() {
       if (!_amountFocusNode.hasFocus) {
         // When focus is lost, format the text if it's not empty
-        final parsedValue = double.tryParse(_amountController.text.replaceAll('¥', '').replaceAll(',', '')) ?? 0.0;
+        final parsedValue = _parseAmount(_amountController.text);
         if (parsedValue != 0.0) { // Only format if there's a non-zero value
           final formatter = NumberFormat.currency(symbol: '¥', decimalDigits: 0);
           _amountController.value = _amountController.value.copyWith(
@@ -57,20 +57,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _amountFocusNode.dispose(); // Dispose FocusNode
     super.dispose();
   }
+  
+  double _parseAmount(String value) {
+    final cleanValue = value.replaceAll(',', '').replaceAll('¥', '');
+    return double.tryParse(cleanValue) ?? 0.0;
+  }
 
   @override
   Widget build(BuildContext context) {
     final formState = ref.watch(transactionFormNotifierProvider);
     final formNotifier = ref.read(transactionFormNotifierProvider.notifier);
     final categoriesAsyncValue = ref.watch(categoriesStreamProvider);
-
-    // Only update description controller if text has changed and preserve selection
-    if (_descriptionController.text != formState.description) {
-      _descriptionController.value = _descriptionController.value.copyWith(
-        text: formState.description,
-        selection: TextSelection.collapsed(offset: formState.description.length),
-      );
-    }
 
     void presentDatePicker() async {
       final now = DateTime.now();
@@ -105,28 +102,25 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     void showCategoryForm() {
       showDialog(
         context: context,
-        builder: (context) {
+        builder: (dialogContext) {
+          final categoryFormNotifier = ref.read(categoryFormNotifierProvider.notifier);
           return AlertDialog(
             title: const Text('New Category'),
-            content: Consumer(
-              builder: (context, ref, child) {
-                final categoryFormNotifier = ref.read(categoryFormNotifierProvider.notifier);
-                return TextFormField(
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  onChanged: categoryFormNotifier.setDescription,
-                );
-              },
+            content: TextFormField(
+              decoration: const InputDecoration(labelText: 'Description'),
+              onChanged: categoryFormNotifier.setDescription,
+              autofocus: true,
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
                 onPressed: () async {
                   await ref.read(categoryFormNotifierProvider.notifier).submitCategory();
                   if (!context.mounted) return;
-                  Navigator.of(context).pop();
+                  Navigator.of(dialogContext).pop();
                 },
                 child: const Text('Save'),
               ),
@@ -179,24 +173,63 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                   ],
                   onChanged: (value) {
-                    // Remove commas and currency symbol before parsing
-                    final cleanValue = value.replaceAll(',', '').replaceAll('¥', '');
-                    formNotifier.setAmount(double.tryParse(cleanValue) ?? 0.0);
+                    formNotifier.setAmount(_parseAmount(value));
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter an amount';
                     }
-                    // Remove commas and currency symbol before parsing
-                    final cleanValue = value.replaceAll(',', '').replaceAll('¥', '');
-                    if (cleanValue.isEmpty) { // Check if empty after removing symbol
-                      return 'Please enter an amount';
-                    }
+                    final cleanValue = _parseAmount(value).toString();
                     if (double.tryParse(cleanValue) == null || double.tryParse(cleanValue)! <= 0) {
                       return 'Please enter a valid positive amount';
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+                categoriesAsyncValue.when(
+                  data: (categories) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<int>(
+                            value: formState.categoryId,
+                            decoration: const InputDecoration(
+                              labelText: 'Category',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: categories.map((category) {
+                              return DropdownMenuItem<int>(
+                                value: category.id,
+                                child: Text(category.description),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              formNotifier.setCategoryId(value);
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select a category';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: showCategoryForm,
+                          tooltip: 'Add New Category',
+                          padding: const EdgeInsets.only(top: 8),
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Center(
+                    child: Text('Could not load categories: $err'),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -217,57 +250,26 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: categoriesAsyncValue.when(
-                        data: (categories) {
-                          return DropdownButtonFormField<int>(
-                            initialValue: formState.categoryId,
-                            decoration: const InputDecoration(
-                              labelText: 'Category',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: categories.map((category) {
-                              return DropdownMenuItem(
-                                value: category.id,
-                                child: Text(category.description),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              if (value != null) {
-                                formNotifier.setCategory(value);
-                              }
-                            },
-                          );
+                      child: RadioListTile<bool>(
+                        title: const Text('Expense'),
+                        value: true,
+                        groupValue: formState.isExpense,
+                        onChanged: (value) {
+                          if (value != null) formNotifier.setIsExpense(value);
                         },
-                        loading: () => const Center(child: CircularProgressIndicator()),
-                        error: (error, stack) => Text('Error: $error'),
                       ),
                     ),
-                    IconButton(
-                      onPressed: showCategoryForm,
-                      icon: const Icon(Icons.add),
+                    Expanded(
+                      child: RadioListTile<bool>(
+                        title: const Text('Income'),
+                        value: false,
+                        groupValue: formState.isExpense,
+                        onChanged: (value) {
+                          if (value != null) formNotifier.setIsExpense(value);
+                        },
+                      ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                RadioGroup<bool>(
-                  groupValue: formState.isExpense,
-                  onChanged: (value) => formNotifier.setIsExpense(value!),
-                  child: Row(
-                    children: const [
-                      Expanded(
-                        child: RadioListTile<bool>(
-                          title: Text('Expense'),
-                          value: true,
-                        ),
-                      ),
-                      Expanded(
-                        child: RadioListTile<bool>(
-                          title: Text('Income'),
-                          value: false,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
