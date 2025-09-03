@@ -1,30 +1,52 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:ricashy_app/main.dart';
+import 'package:ricashy_app/src/data/local_database/database.dart';
+import 'package:ricashy_app/src/domain/providers/database_provider.dart';
+import 'package:drift/native.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('App Widget Tests', () {
+    late AppDatabase database;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    setUp(() {
+      database = AppDatabase(executor: NativeDatabase.memory());
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    tearDown(() {
+      database.close();
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    testWidgets('App starts and displays the dashboard screen', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(database),
+          ],
+          child: const MyApp(),
+        ),
+      );
+
+      expect(find.text('Dashboard'), findsOneWidget);
+    });
+
+    testWidgets('Navigate to Transactions screen', (WidgetTester tester) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              databaseProvider.overrideWithValue(database),
+            ],
+            child: const MyApp(),
+          ),
+        );
+
+        await tester.tap(find.byIcon(Icons.list));
+        await tester.pump();
+
+        expect(find.text('Transactions'), findsAtLeastNWidgets(1));
+      });
+    });
   });
 }

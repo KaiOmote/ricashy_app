@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ricashy_app/src/common_widgets/app_theme.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/transaction_list_screen.dart';
 
@@ -14,10 +15,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Ricashy',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       home: const Shell(),
     );
   }

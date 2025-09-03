@@ -1,169 +1,165 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ricashy_app/src/data/local_database/database.dart';
-import 'package:ricashy_app/src/domain/providers/database_provider.dart';
-import 'package:drift/drift.dart' as drift;
+import 'package:ricashy_app/src/features/transactions/presentation/providers/category_form_provider.dart';
+import 'package:ricashy_app/src/features/transactions/presentation/providers/category_provider.dart';
+import 'package:ricashy_app/src/features/transactions/presentation/providers/transaction_form_provider.dart';
 
-class TransactionFormScreen extends ConsumerStatefulWidget {
+class TransactionFormScreen extends ConsumerWidget {
   const TransactionFormScreen({super.key});
 
   @override
-  ConsumerState<TransactionFormScreen> createState() => _TransactionFormScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formState = ref.watch(transactionFormNotifierProvider);
+    final formNotifier = ref.read(transactionFormNotifierProvider.notifier);
+    final categoriesAsyncValue = ref.watch(categoriesStreamProvider);
 
-class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _descriptionController = TextEditingController();
-  final _amountController = TextEditingController();
-  DateTime? _selectedDate;
-  String? _selectedCategory;
-  bool _isExpense = true;
+    final descriptionController = TextEditingController(text: formState.description);
+    final amountController = TextEditingController(text: formState.amount.toString());
 
-  @override
-  void dispose() {
-    _descriptionController.dispose();
-    _amountController.dispose();
-    super.dispose();
-  }
+    void presentDatePicker() async {
+      final now = DateTime.now();
+      final firstDate = DateTime(now.year - 1, now.month, now.day);
+      final lastDate = now;
 
-  void _presentDatePicker() async {
-    final now = DateTime.now();
-    final firstDate = DateTime(now.year - 1, now.month, now.day);
-    final lastDate = now;
-
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: firstDate,
-      lastDate: lastDate,
-    );
-
-    setState(() {
-      _selectedDate = pickedDate;
-    });
-  }
-
-  void _submitTransaction() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      final transactionRepository = ref.read(transactionRepositoryProvider);
-
-      final newTransaction = TransactionsCompanion(
-        description: drift.Value(_descriptionController.text),
-        amount: drift.Value(double.parse(_amountController.text) * (_isExpense ? -1 : 1)),
-        date: drift.Value(_selectedDate ?? DateTime.now()),
-        // categoryId: drift.Value(_selectedCategory), // TODO: Handle category ID
+      final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: now,
+        firstDate: firstDate,
+        lastDate: lastDate,
       );
 
-      await transactionRepository.insertTransaction(newTransaction);
+      if (pickedDate != null) {
+        formNotifier.setDate(pickedDate);
+      }
+    }
 
+    void submitTransaction() async {
+      await formNotifier.submitTransaction();
+      if (!context.mounted) return;
       Navigator.of(context).pop();
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
+    void showCategoryForm() {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('New Category'),
+            content: Consumer(
+              builder: (context, ref, child) {
+                final categoryFormNotifier = ref.read(categoryFormNotifierProvider.notifier);
+                return TextFormField(
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  onChanged: categoryFormNotifier.setDescription,
+                );
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await ref.read(categoryFormNotifierProvider.notifier).submitCategory();
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add/Edit Transaction'),
+        title: const Text('Add Transaction'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          key: _formKey,
           child: Column(
             children: [
               TextFormField(
-                controller: _descriptionController,
+                controller: descriptionController,
                 decoration: const InputDecoration(labelText: 'Description'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description.';
-                  }
-                  return null;
-                },
+                onChanged: formNotifier.setDescription,
               ),
               TextFormField(
-                controller: _amountController,
+                controller: amountController,
                 decoration: const InputDecoration(labelText: 'Amount'),
                 keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an amount.';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number.';
-                  }
-                  return null;
-                },
+                onChanged: (value) => formNotifier.setAmount(double.tryParse(value) ?? 0.0),
               ),
               Row(
                 children: [
                   Expanded(
                     child: Text(
-                      _selectedDate == null
-                          ? 'No date chosen!'
-                          : 'Picked Date: ${(_selectedDate!).toLocal().toString().split(' ')[0]}',
+                      'Picked Date: ${formState.date.toLocal().toString().split(' ')[0]}',
                     ),
                   ),
                   IconButton(
-                    onPressed: _presentDatePicker,
+                    onPressed: presentDatePicker,
                     icon: const Icon(Icons.calendar_today),
                   ),
                 ],
               ),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(labelText: 'Category'),
-                items: const [
-                  // TODO: Populate with actual categories from database
-                  DropdownMenuItem(value: 'Food', child: Text('Food')),
-                  DropdownMenuItem(value: 'Transport', child: Text('Transport')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a category.';
-                  }
-                  return null;
-                },
-              ),
               Row(
                 children: [
                   Expanded(
-                    child: RadioListTile<bool>(
-                      title: const Text('Expense'),
-                      value: true,
-                      groupValue: _isExpense,
-                      onChanged: (value) {
-                        setState(() {
-                          _isExpense = value!;
-                        });
+                    child: categoriesAsyncValue.when(
+                      data: (categories) {
+                        return DropdownButtonFormField<int>(
+                          initialValue: formState.categoryId,
+                          decoration: const InputDecoration(labelText: 'Category'),
+                          items: categories.map((category) {
+                            return DropdownMenuItem(
+                              value: category.id,
+                              child: Text(category.description),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              formNotifier.setCategory(value);
+                            }
+                          },
+                        );
                       },
+                      loading: () => const CircularProgressIndicator(),
+                      error: (error, stack) => Text('Error: $error'),
                     ),
                   ),
-                  Expanded(
-                    child: RadioListTile<bool>(
-                      title: const Text('Income'),
-                      value: false,
-                      groupValue: _isExpense,
-                      onChanged: (value) {
-                        setState(() {
-                          _isExpense = value!;
-                        });
-                      },
-                    ),
+                  IconButton(
+                    onPressed: showCategoryForm,
+                    icon: const Icon(Icons.add),
                   ),
                 ],
               ),
+              RadioGroup<bool>(
+                groupValue: formState.isExpense,
+                onChanged: (value) => formNotifier.setIsExpense(value!),
+                child: Row(
+                  children: const [
+                    Expanded(
+                      child: RadioListTile<bool>(
+                        title: Text('Expense'),
+                        value: true,
+                      ),
+                    ),
+                    Expanded(
+                      child: RadioListTile<bool>(
+                        title: Text('Income'),
+                        value: false,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _submitTransaction,
+                onPressed: submitTransaction,
                 child: const Text('Save Transaction'),
               ),
             ],

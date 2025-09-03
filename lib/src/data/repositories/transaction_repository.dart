@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:ricashy_app/src/data/local_database/database.dart';
 
 class TransactionRepository {
