@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ricashy_app/src/data/local_database/database.dart';
 import 'package:ricashy_app/src/data/repositories/transaction_repository.dart';
 export 'package:ricashy_app/src/data/repositories/transaction_repository.dart';
+import 'package:ricashy_app/src/data/repositories/category_repository.dart'; // Added import
+export 'package:ricashy_app/src/data/repositories/category_repository.dart'; // Added export
 import 'package:ricashy_app/src/features/transactions/presentation/providers/transaction_filter_provider.dart'; // Added import
 
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -13,8 +15,18 @@ final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   return TransactionRepository(db);
 });
 
+final categoryRepositoryProvider = Provider<CategoryRepository>((ref) { // Added categoryRepositoryProvider
+  final db = ref.watch(databaseProvider);
+  return CategoryRepository(db);
+});
+
 final transactionsStreamProvider = StreamProvider<List<Transaction>>((ref) {
   final transactionRepository = ref.watch(transactionRepositoryProvider);
   final filter = ref.watch(transactionFilterProvider); // Watch the filter provider
   return transactionRepository.getFilteredTransactions(filter); // Pass the filter
+});
+
+final categoriesStreamProvider = StreamProvider<List<Category>>((ref) { // Added categoriesStreamProvider
+  final categoryRepository = ref.watch(categoryRepositoryProvider);
+  return categoryRepository.getAllCategories();
 });

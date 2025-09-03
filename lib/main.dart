@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ricashy_app/src/common_widgets/app_theme.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/transaction_form_screen.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/transaction_list_screen.dart';
+import 'package:ricashy_app/src/features/transactions/presentation/category_management_screen.dart'; // Added import
 
 void main() {
   runApp(const ProviderScope(child: MyApp()));
@@ -52,6 +53,7 @@ class _ShellState extends State<Shell> {
         );
       },
     ),
+    const CategoryManagementScreen(), // Added CategoryManagementScreen
     const Center(child: Text('Reports Screen')),
     const Center(child: Text('Settings Screen')),
   ];
@@ -77,6 +79,10 @@ class _ShellState extends State<Shell> {
               NavigationRailDestination(
                 icon: Icon(Icons.list),
                 label: Text('Transactions'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.category), // Icon for Categories
+                label: Text('Categories'), // Label for Categories
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.pie_chart),

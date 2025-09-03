@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/providers/category_form_provider.dart';
-import 'package:ricashy_app/src/features/transactions/presentation/providers/category_provider.dart';
+// import 'package:ricashy_app/src/features/transactions/presentation/providers/category_provider.dart'; // Removed
 import 'package:ricashy_app/src/features/transactions/presentation/providers/transaction_form_provider.dart';
 import 'package:intl/intl.dart'; // Added import for intl
 import 'package:flutter/services.dart'; // Added import for services
+import 'package:ricashy_app/src/domain/providers/database_provider.dart'; // Ensure this is present for categoriesStreamProvider
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({super.key});
@@ -41,11 +42,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           // If value is 0.0, clear the field
           _amountController.text = '';
         }
-      } else {
-        // When focus is gained, remove currency symbol for easier editing
-        _amountController.text = _amountController.text.replaceAll('¥', '').replaceAll(',', '');
-        // Place cursor at the end
-        _amountController.selection = TextSelection.collapsed(offset: _amountController.text.length);
       }
     });
   }
@@ -68,6 +64,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final formState = ref.watch(transactionFormNotifierProvider);
     final formNotifier = ref.read(transactionFormNotifierProvider.notifier);
     final categoriesAsyncValue = ref.watch(categoriesStreamProvider);
+
+    // Only update description controller if text has changed and preserve selection
+    if (_descriptionController.text != formState.description) {
+      _descriptionController.value = _descriptionController.value.copyWith(
+        text: formState.description,
+        selection: TextSelection.collapsed(offset: formState.description.length),
+      );
+    }
 
     void presentDatePicker() async {
       final now = DateTime.now();
@@ -187,6 +191,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Picked Date: ${formState.date.toLocal().toString().split(' ')[0]}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: presentDatePicker,
+                      icon: const Icon(Icons.calendar_today),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 categoriesAsyncValue.when(
                   data: (categories) {
                     return Row(
@@ -230,21 +249,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   error: (err, stack) => Center(
                     child: Text('Could not load categories: $err'),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Picked Date: ${formState.date.toLocal().toString().split(' ')[0]}',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: presentDatePicker,
-                      icon: const Icon(Icons.calendar_today),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 16),
                 Row(

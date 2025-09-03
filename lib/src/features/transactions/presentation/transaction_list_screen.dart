@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ricashy_app/src/domain/providers/database_provider.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/widgets/transaction_list_item.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/providers/transaction_filter_provider.dart'; // Added import
-import 'package:ricashy_app/src/features/transactions/presentation/providers/category_provider.dart'; // Added import
+// import 'package:ricashy_app/src/features/transactions/presentation/providers/category_provider.dart'; // Removed
 import 'package:intl/intl.dart'; // Added import for DateFormat
 
 class TransactionListScreen extends ConsumerWidget {
