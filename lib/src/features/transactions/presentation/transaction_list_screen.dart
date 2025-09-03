@@ -13,23 +13,29 @@ class TransactionListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transactions'),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
       ),
       body: transactionsAsyncValue.when(
         data: (transactions) {
           if (transactions.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.receipt_long, size: 100, color: Colors.grey),
-                  SizedBox(height: 16),
+                  Icon(
+                    Icons.receipt_long,
+                    size: 100,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     'No transactions yet.',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   Text(
                     'Add a new transaction to get started.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: Theme.of(context).textTheme.bodyLarge,
                   ),
                 ],
               ),

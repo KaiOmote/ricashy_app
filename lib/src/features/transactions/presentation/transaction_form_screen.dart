@@ -76,93 +76,118 @@ class TransactionFormScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Transaction'),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          child: Column(
-            children: [
-              TextFormField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                onChanged: formNotifier.setDescription,
-              ),
-              TextFormField(
-                controller: amountController,
-                decoration: const InputDecoration(labelText: 'Amount'),
-                keyboardType: TextInputType.number,
-                onChanged: (value) => formNotifier.setAmount(double.tryParse(value) ?? 0.0),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Picked Date: ${formState.date.toLocal().toString().split(' ')[0]}',
-                    ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
                   ),
-                  IconButton(
-                    onPressed: presentDatePicker,
-                    icon: const Icon(Icons.calendar_today),
+                  onChanged: formNotifier.setDescription,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: amountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Amount',
+                    border: OutlineInputBorder(),
                   ),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: categoriesAsyncValue.when(
-                      data: (categories) {
-                        return DropdownButtonFormField<int>(
-                          initialValue: formState.categoryId,
-                          decoration: const InputDecoration(labelText: 'Category'),
-                          items: categories.map((category) {
-                            return DropdownMenuItem(
-                              value: category.id,
-                              child: Text(category.description),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              formNotifier.setCategory(value);
-                            }
-                          },
-                        );
-                      },
-                      loading: () => const CircularProgressIndicator(),
-                      error: (error, stack) => Text('Error: $error'),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: showCategoryForm,
-                    icon: const Icon(Icons.add),
-                  ),
-                ],
-              ),
-              RadioGroup<bool>(
-                groupValue: formState.isExpense,
-                onChanged: (value) => formNotifier.setIsExpense(value!),
-                child: Row(
-                  children: const [
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) => formNotifier.setAmount(double.tryParse(value) ?? 0.0),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
                     Expanded(
-                      child: RadioListTile<bool>(
-                        title: Text('Expense'),
-                        value: true,
+                      child: Text(
+                        'Picked Date: ${formState.date.toLocal().toString().split(' ')[0]}',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
-                    Expanded(
-                      child: RadioListTile<bool>(
-                        title: Text('Income'),
-                        value: false,
-                      ),
+                    IconButton(
+                      onPressed: presentDatePicker,
+                      icon: const Icon(Icons.calendar_today),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: submitTransaction,
-                child: const Text('Save Transaction'),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: categoriesAsyncValue.when(
+                        data: (categories) {
+                          return DropdownButtonFormField<int>(
+                            initialValue: formState.categoryId,
+                            decoration: const InputDecoration(
+                              labelText: 'Category',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: categories.map((category) {
+                              return DropdownMenuItem(
+                                value: category.id,
+                                child: Text(category.description),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                formNotifier.setCategory(value);
+                              }
+                            },
+                          );
+                        },
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (error, stack) => Text('Error: $error'),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: showCategoryForm,
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                RadioGroup<bool>(
+                  groupValue: formState.isExpense,
+                  onChanged: (value) => formNotifier.setIsExpense(value!),
+                  child: Row(
+                    children: const [
+                      Expanded(
+                        child: RadioListTile<bool>(
+                          title: Text('Expense'),
+                          value: true,
+                        ),
+                      ),
+                      Expanded(
+                        child: RadioListTile<bool>(
+                          title: Text('Income'),
+                          value: false,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: submitTransaction,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text('Save Transaction'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

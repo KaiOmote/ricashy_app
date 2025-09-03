@@ -1,0 +1,107 @@
+{
+  "appStyle": {
+    "theme": "cute, modern, easy-to-read",
+    "colors": {
+      "primary": "#4C6EF5",
+      "secondary": "#9B5DE5",
+      "accent": "#F15BB5",
+      "background": "#F9F9FB",
+      "cardBackground": "#FFFFFF",
+      "textPrimary": "#2E2E2E",
+      "textSecondary": "#6E6E6E"
+    },
+    "typography": {
+      "fontFamily": "Nunito",
+      "fontSizes": {
+        "title": "24px",
+        "subtitle": "18px",
+        "body": "14px"
+      }
+    },
+    "shapes": {
+      "borderRadius": "16px",
+      "shadows": "soft, subtle"
+    },
+    "iconPack": "Material 3"
+  },
+  "screens": [
+    {
+      "name": "Dashboard",
+      "layout": "two-column",
+      "components": [
+        {
+          "type": "card",
+          "content": "Total Balance",
+          "style": "gradient background (blue → purple)",
+          "position": "top-left"
+        },
+        {
+          "type": "list",
+          "content": "Recent Transactions",
+          "style": "clean, minimal, with small category icons",
+          "position": "right"
+        },
+        {
+          "type": "barChart",
+          "content": "Spending Categories",
+          "style": "horizontal bars with soft gradient fills",
+          "position": "bottom-left"
+        }
+      ]
+    },
+    {
+      "name": "Add Expense",
+      "layout": "single-column",
+      "components": [
+        {
+          "type": "form",
+          "fields": [
+            { "label": "Amount", "input": "numeric field" },
+            { "label": "Category", "input": "icon buttons (food, transport, shopping, etc.)" }
+          ],
+          "button": {
+            "label": "Add Expense",
+            "style": "primary button with gradient purple"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Budget Overview",
+      "layout": "two-column",
+      "components": [
+        {
+          "type": "pieChart",
+          "content": "Spending by Category",
+          "style": "soft colors (blue, purple, pink)"
+        },
+        {
+          "type": "barChart",
+          "content": "Income vs Expenses",
+          "style": "stacked vertical bars with gradient"
+        },
+        {
+          "type": "list",
+          "content": "Recent Transactions",
+          "style": "clean rows with category tags"
+        }
+      ]
+    },
+    {
+      "name": "Profile/Settings",
+      "layout": "single-column",
+      "components": [
+        {
+          "type": "profileCard",
+          "content": "User Info (avatar, name, email)",
+          "style": "centered card with soft shadow"
+        },
+        {
+          "type": "list",
+          "content": "Account settings and app settings",
+          "style": "rounded list items with icons"
+        }
+      ]
+    }
+  ]
+}
