@@ -72,6 +72,10 @@ class TransactionFormNotifier extends StateNotifier<TransactionFormState> {
 
     await transactionRepository.insertTransaction(newTransaction);
   }
+
+  void resetForm() {
+    state = TransactionFormState(date: DateTime.now());
+  }
 }
 
 final transactionFormNotifierProvider = StateNotifierProvider<TransactionFormNotifier, TransactionFormState>((ref) {

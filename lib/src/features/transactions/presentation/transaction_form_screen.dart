@@ -4,6 +4,7 @@ import 'package:ricashy_app/src/features/transactions/presentation/providers/cat
 import 'package:ricashy_app/src/features/transactions/presentation/providers/category_provider.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/providers/transaction_form_provider.dart';
 import 'package:intl/intl.dart'; // Added import for intl
+import 'package:flutter/services.dart'; // Added import for services
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({super.key});
@@ -91,6 +92,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     void submitTransaction() async {
       if (_formKey.currentState!.validate()) {
         await formNotifier.submitTransaction();
+        formNotifier.resetForm(); // Call resetForm() after successful submission
         if (!context.mounted) return;
         Navigator.of(context).pop();
       } else {
@@ -154,6 +156,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     labelText: 'Description',
                     border: OutlineInputBorder(),
                   ),
+                  maxLength: 100, // Added maxLength
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced, // Added maxLengthEnforcement
                   onChanged: formNotifier.setDescription,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -171,6 +175,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  ],
                   onChanged: (value) {
                     // Remove commas and currency symbol before parsing
                     final cleanValue = value.replaceAll(',', '').replaceAll('¥', '');
