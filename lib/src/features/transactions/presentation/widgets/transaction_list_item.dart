@@ -9,7 +9,7 @@ class TransactionListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.simpleCurrency(locale: 'en_US');
+    final currencyFormat = NumberFormat.currency(symbol: '¥', decimalDigits: 0);
     final dateFormat = DateFormat.yMMMd();
 
     return Card(
