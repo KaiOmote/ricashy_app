@@ -3,18 +3,73 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/providers/category_form_provider.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/providers/category_provider.dart';
 import 'package:ricashy_app/src/features/transactions/presentation/providers/transaction_form_provider.dart';
+import 'package:intl/intl.dart'; // Added import for intl
 
-class TransactionFormScreen extends ConsumerWidget {
+class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TransactionFormScreen> createState() => _TransactionFormScreenState();
+}
+
+class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _amountController;
+  late final TextEditingController _descriptionController;
+  late final FocusNode _amountFocusNode; // Added FocusNode
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _amountFocusNode = FocusNode(); // Initialize FocusNode
+
+    // Add listener to format amount when focus is lost or gained
+    _amountFocusNode.addListener(() {
+      if (!_amountFocusNode.hasFocus) {
+        // When focus is lost, format the text if it's not empty
+        final parsedValue = double.tryParse(_amountController.text.replaceAll('¥', '').replaceAll(',', '')) ?? 0.0;
+        if (parsedValue != 0.0) { // Only format if there's a non-zero value
+          final formatter = NumberFormat.currency(symbol: '¥', decimalDigits: 0);
+          _amountController.value = _amountController.value.copyWith(
+            text: formatter.format(parsedValue),
+            selection: TextSelection.collapsed(offset: formatter.format(parsedValue).length),
+          );
+        } else {
+          // If value is 0.0, clear the field
+          _amountController.text = '';
+        }
+      } else {
+        // When focus is gained, remove currency symbol for easier editing
+        _amountController.text = _amountController.text.replaceAll('¥', '').replaceAll(',', '');
+        // Place cursor at the end
+        _amountController.selection = TextSelection.collapsed(offset: _amountController.text.length);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _descriptionController.dispose();
+    _amountFocusNode.dispose(); // Dispose FocusNode
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final formState = ref.watch(transactionFormNotifierProvider);
     final formNotifier = ref.read(transactionFormNotifierProvider.notifier);
     final categoriesAsyncValue = ref.watch(categoriesStreamProvider);
 
-    final descriptionController = TextEditingController(text: formState.description);
-    final amountController = TextEditingController(text: formState.amount.toString());
+    // Only update description controller if text has changed and preserve selection
+    if (_descriptionController.text != formState.description) {
+      _descriptionController.value = _descriptionController.value.copyWith(
+        text: formState.description,
+        selection: TextSelection.collapsed(offset: formState.description.length),
+      );
+    }
 
     void presentDatePicker() async {
       final now = DateTime.now();
@@ -34,9 +89,15 @@ class TransactionFormScreen extends ConsumerWidget {
     }
 
     void submitTransaction() async {
-      await formNotifier.submitTransaction();
-      if (!context.mounted) return;
-      Navigator.of(context).pop();
+      if (_formKey.currentState!.validate()) {
+        await formNotifier.submitTransaction();
+        if (!context.mounted) return;
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please correct the errors in the form')),
+        );
+      }
     }
 
     void showCategoryForm() {
@@ -83,26 +144,52 @@ class TransactionFormScreen extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextFormField(
-                  controller: descriptionController,
+                  controller: _descriptionController,
                   decoration: const InputDecoration(
                     labelText: 'Description',
                     border: OutlineInputBorder(),
                   ),
                   onChanged: formNotifier.setDescription,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a description';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller: amountController,
+                  controller: _amountController,
+                  focusNode: _amountFocusNode, // Attach FocusNode
                   decoration: const InputDecoration(
                     labelText: 'Amount',
                     border: OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.number,
-                  onChanged: (value) => formNotifier.setAmount(double.tryParse(value) ?? 0.0),
+                  onChanged: (value) {
+                    // Remove commas and currency symbol before parsing
+                    final cleanValue = value.replaceAll(',', '').replaceAll('¥', '');
+                    formNotifier.setAmount(double.tryParse(cleanValue) ?? 0.0);
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter an amount';
+                    }
+                    // Remove commas and currency symbol before parsing
+                    final cleanValue = value.replaceAll(',', '').replaceAll('¥', '');
+                    if (cleanValue.isEmpty) { // Check if empty after removing symbol
+                      return 'Please enter an amount';
+                    }
+                    if (double.tryParse(cleanValue) == null || double.tryParse(cleanValue)! <= 0) {
+                      return 'Please enter a valid positive amount';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
                 Row(
