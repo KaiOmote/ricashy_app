@@ -36,20 +36,42 @@ class CategoryFormNotifier extends StateNotifier<CategoryFormState> {
     state = CategoryFormState(id: category.id, description: category.description);
   }
 
-  Future<void> submitCategory() async {
-    final categoryRepository = ref.read(categoryRepositoryProvider);
+  void resetForm() {
+    state = CategoryFormState();
+  }
 
-    if (state.id == null) {
-      // Insert new category
-      await categoryRepository.insertCategory(CategoriesCompanion(
-        description: drift.Value(state.description),
-      ));
-    } else {
-      // Update existing category
-      await categoryRepository.updateCategory(CategoriesCompanion(
-        id: drift.Value(state.id!),
-        description: drift.Value(state.description),
-      ));
+  Future<bool> submitCategory() async {
+    final categoryRepository = ref.read(categoryRepositoryProvider);
+    final description = state.description.trim();
+
+    if (description.isEmpty) {
+      return false; // Don't submit empty descriptions
+    }
+
+    // Check if a category with the same description already exists
+    final exists = await categoryRepository.categoryExists(description, excludeId: state.id);
+    if (exists) {
+      // For now, we just prevent submission by returning false.
+      return false;
+    }
+
+    try {
+      if (state.id == null) {
+        // Insert new category
+        await categoryRepository.insertCategory(CategoriesCompanion(
+          description: drift.Value(description),
+        ));
+      } else {
+        // Update existing category
+        await categoryRepository.updateCategory(CategoriesCompanion(
+          id: drift.Value(state.id!),
+          description: drift.Value(description),
+        ));
+      }
+      return true;
+    } catch (e) {
+      // Optionally log the error
+      return false;
     }
   }
 }

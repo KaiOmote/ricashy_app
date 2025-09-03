@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:ricashy_app/src/data/local_database/database.dart';
 import 'package:ricashy_app/src/domain/providers/database_provider.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 /// Represents the state of the transaction form.
 class TransactionFormState {
@@ -52,15 +53,21 @@ class TransactionFormNotifier extends StateNotifier<TransactionFormState> {
 
   void setCategoryId(int? categoryId) => state = state.copyWith(categoryId: categoryId);
 
-  Future<void> submitTransaction() async {
-    final amount = state.isExpense ? -state.amount.abs() : state.amount.abs();
-    final transaction = TransactionsCompanion(
-      description: drift.Value(state.description),
-      amount: drift.Value(amount),
-      date: drift.Value(state.date),
-      categoryId: drift.Value(state.categoryId),
-    );
-    await _transactionRepository.insertTransaction(transaction);
+  Future<bool> submitTransaction() async {
+    try {
+      final amount = state.isExpense ? -state.amount.abs() : state.amount.abs();
+      final transaction = TransactionsCompanion(
+        description: drift.Value(state.description),
+        amount: drift.Value(amount),
+        date: drift.Value(state.date),
+        categoryId: drift.Value(state.categoryId),
+      );
+      await _transactionRepository.insertTransaction(transaction);
+      return true;
+    } catch (e) {
+      debugPrint('Error submitting transaction: $e');
+      return false;
+    }
   }
 
   void resetForm() => state = TransactionFormState();

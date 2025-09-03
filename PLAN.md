@@ -37,9 +37,9 @@ This document outlines the development plan for building the Finance Tracker app
     *   **Verification:** Write unit tests for the logic. Run the app and manually add/edit/delete a transaction to confirm it works.
 *   [x] **Task 2.3:** Create the UI to display a list of all transactions.
     *   **Verification:** Run the app and confirm that transactions added in the previous step are displayed correctly.
-*   [ ] **Task 2.4:** Implement filtering (by date, category, type) and search functionality for the transactions list.
+*   [x] **Task 2.4:** Implement filtering (by date, category, type) and search functionality for the transactions list.
     *   **Verification:** Manually test the filtering and search UI in the running application.
-*   [ ] **Task 2.5:** Add the functionality to create, edit, and delete custom categories.
+*   [x] **Task 2.5:** Add the functionality to create, edit, and delete custom categories.
     *   **Verification:** Manually test the category management UI. Ensure new categories can be used in the transaction form.
 *   [ ] **Task 2.6:** Implement the logic for handling recurring income.
     *   **Verification:** Write unit tests for the recurrence logic. Manually set an income as recurring and check that it is added automatically after the specified period.

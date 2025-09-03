@@ -92,10 +92,44 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     void submitTransaction() async {
       if (_formKey.currentState!.validate()) {
-        await formNotifier.submitTransaction();
-        formNotifier.resetForm(); // Call resetForm() after successful submission
+        // Check for uncategorized transaction
+        if (formState.categoryId == null) {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Uncategorized Transaction'),
+              content: const Text('You have not selected a category for this transaction. Do you want to proceed?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Proceed'),
+                ),
+              ],
+            ),
+          );
+
+          if (confirmed != true) {
+            return; // User cancelled, do not submit
+          }
+        }
+
+        final success = await formNotifier.submitTransaction();
         if (!context.mounted) return;
-        Navigator.of(context).pop();
+        if (success) {
+          formNotifier.resetForm(); // Call resetForm() after successful submission
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Transaction saved successfully!')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to save transaction.')),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please correct the errors in the form')),
@@ -122,9 +156,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  await ref.read(categoryFormNotifierProvider.notifier).submitCategory();
+                  final success = await ref.read(categoryFormNotifierProvider.notifier).submitCategory();
                   if (!context.mounted) return;
                   Navigator.of(dialogContext).pop();
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Category added successfully!')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to add category.')),
+                    );
+                  }
                 },
                 child: const Text('Save'),
               ),
@@ -226,12 +269,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             }).toList(),
                             onChanged: (value) {
                               formNotifier.setCategoryId(value);
-                            },
-                            validator: (value) {
-                              if (value == null) {
-                                return 'Please select a category';
-                              }
-                              return null;
                             },
                           ),
                         ),

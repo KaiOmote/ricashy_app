@@ -19,6 +19,14 @@ class TransactionRepository {
     return (_db.delete(_db.transactions)..where((t) => t.id.equals(id))).go();
   }
 
+  Future<bool> hasTransactionsForCategory(int categoryId) async {
+    final count = await (_db.select(_db.transactions)
+          ..where((t) => t.categoryId.equals(categoryId)))
+        .get()
+        .then((list) => list.length);
+    return count > 0;
+  }
+
   Stream<List<Transaction>> getAllTransactions() {
     return _db.select(_db.transactions).watch();
   }
