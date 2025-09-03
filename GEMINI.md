@@ -21,7 +21,7 @@
     *   `fl_chart`: A powerful library for creating charts and graphs.
     *   `intl`: For internationalization and localization, including date and number formatting.
     *   `path_provider`: To locate standard filesystem locations.
-    *   `drift` or `sqflite`: For local database storage (to be decided).
+    *   `drift`: For local database storage.
 
 ## 3. Project Structure
 

@@ -26,16 +26,16 @@ The primary target audience is individuals who want to gain a deeper understandi
 
 ### 3.3. Budgeting
 
-*   **US8:** As a user, I want to create monthly budgets for specific spending categories.
-*   **US9:** As a user, I want to see my current spending against the budget for a category so that I can track my progress.
-*   **US10:** As a user, I want to be visually alerted when I am approaching or have exceeded my budget for a category.
+*   **US9:** As a user, I want to create monthly budgets for specific spending categories.
+*   **US10:** As a user, I want to see my current spending against the budget for a category so that I can track my progress.
+*   **US11:** As a user, I want to be visually alerted when I am approaching or have exceeded my budget for a category.
 
 ### 3.4. Reporting & Insights
 
-*   **US11:** As a user, I want to view a dashboard that summarizes my financial health for the current month (e.g., total income, total expenses, net savings).
-*   **US12:** As a user, I want to generate reports that visualize my spending and income over time.
-*   **US13:** As a user, I want to choose from different types of visuals for my reports, such as pie charts (for category breakdown), bar graphs (for monthly comparisons), and line graphs (for trends).
-*   **US14:** As a user, I want to compare my spending in a specific category between different months to understand my habits.
+*   **US12:** As a user, I want to view a dashboard that summarizes my financial health for the current month (e.g., total income, total expenses, net savings).
+*   **US13:** As a user, I want to generate reports that visualize my spending and income over time.
+*   **US14:** As a user, I want to choose from different types of visuals for my reports, such as pie charts (for category breakdown), bar graphs (for monthly comparisons), and line graphs (for trends).
+*   **US15:** As a user, I want to compare my spending in a specific category between different months to understand my habits.
 
 ## 4. Design & UX Requirements
 
